@@ -1,0 +1,96 @@
+Conjuring MongoDB
+
+What Is MongoDB?
+
+• Open-source NoSQL database
+• Document-oriented
+• Great for unstructured data, especially when
+you have a lot of it
+
+MongoDB Comparison to SQL
+
+        SQL             MongoDB
+        row             document
+        table           collection
+        database        database
+The main difference? SQL is relational
+and MongoDB is document-oriented.
+
+Relational vs. Document-oriented
+Relational database management systems save data in rows within tables. MongoDB saves
+data as documents within collections.
+
+Collections Group Documents
+Collections are simply groups of documents. Since documents exist independently, they can
+have different fields.(*referred to as dynamic scheme)
+
+Starting the Shell
+We can access MongoDB through the terminal application. If you want try this out locally,
+follow the link below for MongoDB installation instructions.
+
+$ mongo
+
+How Do We Interact With MongoDB?
+All instances of MongoDB come with a command line program we can use to interact with
+our database using JavaScript.
+
+> var potion = {
+"name": "Invisibility",
+"vendor": "Kettlecooked"
+}
+>potion
+{
+"name": "Invisibility",
+"vendor": "Kettlecooked"
+}
+
+Documents are like JSON Objects
+
+Using the Shell
+MongoDB comes with helper methods to make it easy to interact with the database.
+
+> use reviews
+//switch to db called reviews
+> db
+reviews
+> db.help()
+... 
+    ...
+> show dbs
+admin   0.000GB
+config  0.000GB
+local   0.000GB
+
+Documents need to be stored in Collections
+Documents are always stored in collections within a database.
+
+Inserting a Document Into a Collection
+We can use the insert() collection method to save a potion document to the potions
+collection.
+
+> db.potions.insert({ "name":"Invisibility","vendor":"Kettlecooked" })
+WriteResult({ "nInserted" : 1 })
+
+What's a WriteResult?
+Whenever we write to the database, we’ll always be returned a WriteResult object that tells us
+if the operation was successful or not.
+
+> db.potions.insert({ "name":"Invisibility","vendor":"Kettlecooked" })
+WriteResult({ "nInserted" : 1 })
+
+Finding All Potions
+We can use the find() collection method to retrieve the potion from the inventory collection.
+
+> db.potions.find()
+{ "_id" : ObjectId("59f78726b064f3ec4533edd1"), "name" : "Invisibility", "vendor" : "Kettlecooked" }
+
+Using Find to Return All Documents in a Collection
+> db.potions.insert({
+... "name":"Love","vendor":"Al Green"})
+WriteResult({ "nInserted" : 1 })
+> db.potions.insert({ "name":"Shrinking","vendor":"Japan"})
+WriteResult({ "nInserted" : 1 })
+> db.potions.find()
+{ "_id" : ObjectId("59f788a689b1b47edb824ec8"), "name" : "Love", "vendor" : "Al Green" }
+{ "_id" : ObjectId("59f788c389b1b47edb824ec9"), "name" : "Shrinking", "vendor" : "Japan" }
+> 
