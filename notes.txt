@@ -94,3 +94,131 @@ WriteResult({ "nInserted" : 1 })
 { "_id" : ObjectId("59f788a689b1b47edb824ec8"), "name" : "Love", "vendor" : "Al Green" }
 { "_id" : ObjectId("59f788c389b1b47edb824ec9"), "name" : "Shrinking", "vendor" : "Japan" }
 > 
+
+***** Level 1 Section 2 *****
+
+ObjectIds Make Documents Unique
+Every document is required to have a unique _id field. If we don’t specify one when inserting
+a document, MongoDB will generate one using the ObjectId data type.
+
+> db.potions.find()
+{ "_id" : ObjectId("59f788a689b1b47edb824ec8"), "name" : "Love", "vendor" : "Al Green" }
+{ "_id" : ObjectId("59f788c389b1b47edb824ec9"), "name" : "Shrinking", "vendor" : "Japan" }
+{ "_id" : ObjectId("59f7b11a544124204987951f"), "name" : "Invisibility", "vendor" : "Kettlecooked" }
+
+It ’s common to let MongoDB handle _id generation.
+
+Finding a Specific Potion With a Query
+We can perform a query of equality by specifying a field to query and the value we’d like.
+
+> db.potions.find({"name":"Love"})
+{ "_id" : ObjectId("59f788a689b1b47edb824ec8"), "name" : "Love", "vendor" : "Al Green" }
+
+Queries That Return Multiple Values
+More than 1 document matches the query
+
+> db.potions.find({"vendor" :"Al Green"})
+{ "_id" : ObjectId("59f788a689b1b47edb824ec8"), "name" : "Love", "vendor" : "Al Green" }
+{ "_id" : ObjectId("59f7b3822bd1fdc38c1afad6"), "name" : "Lust", "vendor" : "Al Green" }
+*Queries are case sensitive.
+
+What Else Can We Store?
+Documents are persisted in a format called BSON.
+
+BSON is like JSON, so you can store:            BSON comes with some extras.
+
+Strings - "Pierre Goldstein"                    ObjectId - ObjectId(...)
+Numbers - 1400 3.14                             Date - ISODate(...)
+Booleans - true false
+Arrays - ["newt toes", "pickles"]
+Objects - {"type" : "potion"}
+Null - null
+
+Building Out Our Potions
+Now that we have a better grasp on documents, let’s build out our potion document with all
+the necessary details.
+
+Adding Price and Score
+We can store both integers and floats in a document.
+
+{
+    "name": "Invisibility",
+    "vendor": "Kettlecooked",
+    "price": 10.99,
+    "score": 59
+}
+*MongoDB will preserve the
+precision of both floats and integers
+
+Adding a tryDate
+Dates can be added using the JavaScript Date object and get saved in the database as an
+ISODate object.
+
+{
+    "name": "Invisibility",
+    "vendor": "Kettlecooked",
+    "price": 10.99,
+    "score": 59 ,
+    "tryDate": new Date(2012, 8, 13) *Reads as September 13, 2012, since JavaScript months begin at 0
+}
+
+"tryDate": ISODate("2012-09-13T04:00:00Z") *Dates get converted to an ISO format when saved to the database
+
+Adding a List of Ingredients
+Arrays are a great option for storing lists of data.
+
+{
+    "name": "Invisibility",
+    "vendor": "Kettlecooked",
+    "price": 10.99,
+    "score": 59 ,
+    "tryDate": new Date(2012, 8, 13) ,
+    "ingredients": ["newt toes", 42, "laughter"] *We can store any data type within an array
+}
+
+Adding a Potion’s Ratings
+Each potion has 2 different ratings, which are scores based on a scale of 1 to 5.
+
+{
+    "name": "Invisibility",
+    "vendor": "Kettlecooked",
+    "price": 10.99,
+    "score": 59 ,
+    "tryDate": new Date(2012, 8, 13) ,
+    "ingredients": ["newt toes", 42, "laughter"] *We can store any data type within an array
+    "ratings": {"strength": 2, "flavor": 5} *An embedded document doesn’t require an id since it ’s a child of the main document
+}
+
+Embedded Documents
+We embed documents simply by adding the document as a value for a given field.
+
+Inserting Our New Potion
+We’ve cleared out the inventory collection — now let’s add our newly constructed potion!
+
+> db.potions.insert({"name":"Invisibility", "vendor":"Kettlecooked", "price":10.99, "score":59, "tryDate": new Date(2012, 8, 13), "ingredients":["newt toes", 42,"laughter"], "ratings":{"strength":2, "flavor": 5}})
+WriteResult({ "nInserted" : 1 })
+
+Finding Potions by Ingredients
+Array values are treated individually, which means we can query them by specifying the field
+of the array and the value we’d like to find.
+
+> db.potions.find({"ingredients":"laughter"})
+{ "_id" : ObjectId("59f7bef7482f06dadda2c066"), "name" : "Invisibility", "vendor" : "Kettlecooked", "price" : 10.99, "score" : 59, "tryDate" : ISODate("2012-09-13T07:00:00Z"), "ingredients" : [ "newt toes", 42, "laughter" ], "ratings" : { "strength" : 2, "flavor" : 5 } }
+
+Finding a Potion Based on the Flavor
+We can search for potions by their ratings using dot notation to specify the embedded field
+we’d like to search.
+
+> db.potions.find({"ratings.flavor":5})
+{ "_id" : ObjectId("59f7bef7482f06dadda2c066"), "name" : "Invisibility", "vendor" : "Kettlecooked", "price" : 10.99, "score" : 59, "tryDate" : ISODate("2012-09-13T07:00:00Z"), "ingredients" : [ "newt toes", 42, "laughter" ], "ratings" : { "strength" : 2, "flavor" : 5 } }
+
+What About Insert Validations?
+If we were to insert a new potion but accidentally set the price value to a string, the potion
+would still get saved despite all other potions having integer values.
+MongoDB will only enforce a few rules, which means we'll need to make sure data is valid
+client-side before saving it.
+    No other document shares same _id
+    No syntax errors
+    Document is less than 16m
+
+
