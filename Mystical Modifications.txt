@@ -1,0 +1,182 @@
+/*** Delete a Single Document ***/
+
+> db.potions.remove({"name":"Love"})
+WriteResult({ "nRemoved": 1 })
+
+/* The remove() collection method will delete documents that match the provided query. */
+
+/*** Delete Multiple Documents ***/
+
+/* If our query matches multiple documents, then remove() will delete all of them.Query matches both documents */
+
+> db.potions.remove({"vendor":"Kettlecooked"})
+WriteResult({ "nRemoved" : 2 })
+
+/* Update the Price of a Single Potion */
+// We can use the update() collection method to modify existing documents.
+
+> db.potions.update({"name":"Shrinking"}, {"$set":{"price":3.99}})
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+
+// The WriteResult gives a summary of what the update() method did.
+
+/*** Update Without an Operator ***/
+// If the update parameter consists of only field/value pairs, then everything but the _id is replaced in 
+// the matching document.
+db.potions.update({"name": "Love"},{"price":3.99})
+
+/*** Updating Multiple Documents ***/
+/* The update method can take a third parameter for options. */
+
+> db.potions.update({"vendor": "KC"},{"$set": { "vendor": "Kettlecooked" }},{"multi": true})
+WriteResult({"nMatched": 4, "nUpserted": 0, "nModified": 4 })
+
+/*** Recording Potion Views ***/
+/* Time to start analyzing which potions are viewed the most. To do this, we need to record each potion 
+page view */
+
+{"_id": ObjectId(...),"potion": "Frog Tonic","count": 1} //We’ll update count with each click
+
+/*** Update a Document’s Count ***/
+/* We can use the $inc operator to increment the count of an existing log document. */
+
+db.logs.update({"potion": "Shrinking"},{"$inc":{"count": 1}})
+
+/*** Update a Non-existing Potion ***/
+/* If we run the update on a potion that doesn’t exist, then nothing will happen.  */
+
+> db.logs.update({"potion": "Love"},{"$inc":{"count": 1}}
+WriteResult({ "nMatched": 0, "nUpserted": 0, "nModified": 0})).
+
+/*** Find or Create With Upsert ***/
+
+db.logs.update({"potion": "Love"},{"$inc":{"count": 1}},{"upsert": true} // If the field doesn’t exist, it gets created with the value
+WriteResult({ "nMatched": 0, "nUpserted": 1, "nModified": 0})
+
+/*** Updating Once More ***/
+db.logs.update({"potion": "Love"},{"$inc":{"count": 1}},{"upsert": true})
+WriteResult({ "nMatched": 1, "nUpserted": 0, "nModified": 1})
+
+/***** Level 2 – Section 2 Advanced Modification *****/ 
+
+/*** Improving Potions ***/
+/* We rushed a bit during development and need to fix up our potions. Luckily, we keep a to-do list for 
+what to work on. */
+
+/*** Removing Fields From Documents ***/
+/* We initially thought we’d need a potion’s color, but we never use it. The $unset operator can be used to 
+remove specified fields. */
+
+> db.potions.update( {},{"$unset":{"color": ""},{"multi": true}).
+
+/*** Updating a Field Name With $rename ***/
+We can use $rename to change field names.
+
+> db.potions.update( {},{"$rename": {"score": "grade"}}, {"multi": true})
+
+/*** Potion Ingredient Regulation ***/
+/* The Magical Council has passed a new regulation requiring us to list all ingredients in a potion. No more 
+secret ingredients! */
+//The Dilemma of Updating an Array
+
+"ingredients": ["hippo", "secret", "mouse feet"]
+
+> db.potions.update({"ingredients": "secret"},  {"$set": {"ingredients": "42"}})
+
+"ingredients":42 //Would overwrite the entire array and set it as 42
+
+/*** Updating Array Values by Location ***/
+
+/* Since array values are treated individually, we can update a single value by specifying its location in the 
+array using dot notation. */
+{ 
+    "_id": ObjectId(...),   
+    "name": "Shrinking",
+    "vendor": "Kettlecooked",   
+    "score": 94,
+    ...
+    "ingredients": ["hippo", "secret", "mouse feet"]
+} 
+
+/*** Updating Single Array Value ***/
+
+// The $set operator will update the value of a specified field.
+
+> db.potions.update({"name": "Shrinking"}, {"$set": {"ingredients.1" : 42}})
+WriteResult({"nMatched": 1,"nUpserted": 0,"nModified: 1})
+
+/*** Updating Multiple Arrays ***/
+/* We need to change “secret” in multiple documents, but the location isn’t always the same for every potion. */
+
+/*** Updating Values Without Knowing Position ***/
+/* The positional operator is a placeholder that will set the proper position for the value specified in the 
+query parameter. */
+> db.potions.update({"ingredients": "secret"},  {"$set": {"ingredients.$" : 42}},{"multi": true})
+
+/*** The Result of Using the Positional Operator to Update ***/
+...{"ingredients": "secret"},  {"$set": {"ingredients.$" : 42}},...
+
+ingredients.0
+[42, "wishes", "frog"]
+
+ingredients.1
+["unicorns", 42, "cotton"]
+
+ingredients.2
+["quark", "rubber duck", 42]
+
+/*** Shrunken Conundrum ***/
+/* Uh-oh — the shrinking potion hasn’t worn off, and we keep on shrinking! We better update that strength 
+rating. */
+
+{   
+    "_id": ObjectId(...),   
+    "name": "Shrinking",...
+    "ratings": {"strength": 1,"flavor": 5}
+}
+
+/*** Updating an Embedded Value ***/
+/* We can update using the dot notation to specify the field we want to update. */
+"ratings": {"strength": 1,"flavor": 5}
+> db.potions.update({"name": "Shrinking"},  {"$set": {"ratings.strength" : 5}})
+WriteResult({"nMatched": 1,"nUpserted": 0,"nModified": 1})
+
+/*** Useful Update Operators ***/
+/* MongoDB provides a variety of ways to modify the values of fields. */
+
+$max Updates if new value is greater than current or inserts if empty
+$min Updates if new value is less than current or inserts if empty
+$mul Multiplies current field value by specified value. 
+If empty, it inserts 0.
+
+/*** Modifying Arrays ***/
+/* We’ve added categories to the potions but need a way to easily manipulate the values. */
+"categories": ["tasty", "effective"]
+
+/*** Removing the First or Last Value of an Array ***/
+/* The $pop operator will remove either the first or last value of an array. */
+
+> db.potions.update(  {"name": "Shrinking"},
+{"$pop": {"categories": 1}})
+
+/*** Adding Values to the End of an Array ***/
+/* The $push operator will add a value to the end of an array. */
+> db.potions.update( {"name": "Shrinking"},
+{"$push":{"categories":"budget"}})
+
+/*** Adding Unique Values to an Array ***/
+/* The $addToSet operator will add a value to the end of an array unless it is already present.Value 
+already exists, so it doesn’t get added again */
+
+> db.potions.update({"name": "Shrinking"},
+{"$addToSet":{"categories": "budget"}})
+
+/*** Removing Values From an Array ***/
+/* The $pull operator will remove any instance of a value from an array. */
+> db.potions.update({"name": "Shrinking"},
+{"$pull": {"categories": "tasty"}})
+
+
+
+
+
