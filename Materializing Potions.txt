@@ -1,0 +1,219 @@
+/*** Adding a Filter for Potions ***/
+/* Querying With Multiple Criteria */
+//We can query based on multiple criteria by passing in comma-separated queries
+
+> db.potions.find({"Vendor":"Kettlecooked","Strength":5}).pretty()
+{
+        "_id" : ObjectId("5a08d65976f93977239bf8cf"),
+        "name" : "Invisibility",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 5
+}
+{
+        "_id" : ObjectId("5a08d67776f93977239bf8d0"),
+        "name" : "Shrinking",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 5
+}
+
+/*** Comparison Query Operators ***/
+/* We can use comparison query operators to match documents based on the comparison of a
+specified value. */
+
+// Common comparisons
+greater than               $gt
+less than                  $lt
+greater than or equal to   $gte
+less than or equal to      $lte
+not equal                  $ne
+
+/*** Finding Potions That Are Less Than $20 ***/
+/* We can match the appropriate documents by using the $lt comparison operator. */
+
+> db.potions.find({"price": "$lt": 20}}
+
+/*** Finding Potions Between Prices ***/
+/* We can query with a range by combining comparison operators. */
+
+> db.potions.find({"price": "$gt":10, "$lt": 20}}
+
+/*** Queries of Non-equality ***/
+/* We can use the $ne operator to find potions with fields that don’t equal the specified value. */
+> db.potions.find({"vendor": "$ne": "Brewers"}}
+
+/*** Range Queries on an Array ***/
+/* Each potion has a size field that contains an array of available sizes. We can use $elemMatch
+to make sure at least 1 element matches all criteria. */
+
+db.potions.find({
+    "size":{"$elemMatch": {"$gt": 8, "$lt": 16}}
+})
+
+/* Each value in the array is checked individually. If at least 1 array value is true for each criteria,
+the entire document matches. */
+
+/***** Section 2 *****/
+/*** Introducing Projections ***/
+/* find() takes a second parameter called a “projection” that we can use to specify the exact
+fields we want back by setting their value to true. */
+
+> db.potions.find({"Strength": {"$gte":5}}, {"Vendor":true,"name":true}).pretty()
+{
+        "_id" : ObjectId("5a08d65976f93977239bf8cf"),
+        "name" : "Invisibility",
+        "Vendor" : "Kettlecooked"
+}
+{
+        "_id" : ObjectId("5a08d67776f93977239bf8d0"),
+        "name" : "Shrinking",
+        "Vendor" : "Kettlecooked"
+}
+
+/*** Excluding Fields ***/
+/* Sometimes you want all the fields except for a few. In that case, we can exclude specific fields. */
+
+> db.potions.find({"grade": {"$gte": 80}},{"vendor": false, "price": false})
+
+{
+    "_id": ObjectId(...),
+    "name": "Shrinking",
+    "grade": 94,
+    "ingredients": [...],
+    ...
+}
+
+/*** Excluding the _id ***/
+/* The _id field is always returned whenever selecting or excluding fields. It’s the only field that
+can be set to false when selecting other fields. */
+
+> db.potions.find({"Strength":{"$gte":4}}, {"vendor":true, "_id":false})
+
+{
+"vendor": "Homebrewed",
+"price": 9.99
+}
+
+/*** Either Select or Exclude Fields ***/
+/* Whenever projecting, we either select or exclude the fields we want — we don’t do both. */
+
+> db.potions.find({"Strength": {"$gte":5}}, {"Vendor":true,"price":false}).pretty()
+
+Error: error: 
+{
+        "ok" : 0,
+        "errmsg" : "Projection cannot have a mix of inclusion and exclusion.",
+        "code" : 2,
+        "codeName" : "BadValue"
+}
+
+/*** Introducing the Cursor ***/
+/* Whenever we search for documents, an object is returned from the find method called a
+“cursor object.” */
+
+> db.potions.find({"Vendor":"Kettlecooked"}).pretty()
+{
+        "_id" : ObjectId("5a08d65976f93977239bf8cf"),
+        "name" : "Invisibility",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 5
+}
+{
+        "_id" : ObjectId("5a08d67776f93977239bf8d0"),
+        "name" : "Shrinking",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 5
+}
+{
+        "_id" : ObjectId("5a08d68b76f93977239bf8d1"),
+        "name" : "Luck",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 4
+}
+
+/*** Iterating Through the Cursor ***/
+/* When there are more than 20 documents, the cursor will iterate through them 20 at a time. */
+
+...
+{"_id": ObjectId(...), "name": ... }
+{"_id": ObjectId(...), "name": ... }
+{"_id": ObjectId(...), "name": ... }
+
+type "it" for more //Typing “it” will display the next 20 documents in the cursor.
+
+/*** Cursor Methods ***/
+/* Since the cursor is actually an object, we can chain methods on it. */
+
+> db.potions.find().count()
+5
+
+/*** Sorting Potions ***/
+/* We can use the sort() cursor method to sort documents. */
+
+> db.potions.find().sort({"Stremgth" :1}).pretty() //-1 : descending, 1 : ascending
+{
+        "_id" : ObjectId("5a08d65976f93977239bf8cf"),
+        "name" : "Invisibility",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 5
+}
+{
+        "_id" : ObjectId("5a08d67776f93977239bf8d0"),
+        "name" : "Shrinking",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 5
+}
+{
+        "_id" : ObjectId("5a08d68b76f93977239bf8d1"),
+        "name" : "Luck",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 4
+}
+{
+        "_id" : ObjectId("5a08d6a976f93977239bf8d2"),
+        "name" : "Love",
+        "Vendor" : "Brewers",
+        "Strength" : 2
+}
+
+/*** Basic Pagination ***/
+/* We can implement basic pagination by limiting and skipping over documents. To do this, we’ll
+use the skip() and limit() cursor methods. */
+
+> db.potions.find().limit(3).pretty()
+{
+        "_id" : ObjectId("5a064e21a04a67aafe8d03aa"),
+        "name" : "Shrinking",
+        "vendor" : "Japan",
+        "price" : 3.99
+}
+{
+        "_id" : ObjectId("5a08d65976f93977239bf8cf"),
+        "name" : "Invisibility",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 5
+}
+{
+        "_id" : ObjectId("5a08d67776f93977239bf8d0"),
+        "name" : "Shrinking",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 5
+}
+
+> db.potions.find().skip(2).limit(3).pretty()
+{
+        "_id" : ObjectId("5a08d67776f93977239bf8d0"),
+        "name" : "Shrinking",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 5
+}
+{
+        "_id" : ObjectId("5a08d68b76f93977239bf8d1"),
+        "name" : "Luck",
+        "Vendor" : "Kettlecooked",
+        "Strength" : 4
+}
+{
+        "_id" : ObjectId("5a08d6a976f93977239bf8d2"),
+        "name" : "Love",
+        "Vendor" : "Brewers",
+        "Strength" : 2
